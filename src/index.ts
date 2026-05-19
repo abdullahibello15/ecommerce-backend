@@ -1,46 +1,28 @@
-import { Request } from "express";
+import "dotenv/config";
+import app from "./app";
 
-export interface AuthPayload {
-  userId: string;
-  email: string;
-  role: string;
-}
+const PORT = process.env.PORT || 10000;
 
-// Extend Express Request so body, params, query are all available
-export interface AuthRequest extends Request {
-  user?: AuthPayload;
-}
+// Catch any unhandled errors at startup
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err.message);
+  console.error(err.stack);
+  process.exit(1);
+});
 
-export interface PaginationQuery {
-  page?: string;
-  limit?: string;
-}
+process.on("unhandledRejection", (reason) => {
+  console.error("UNHANDLED REJECTION:", reason);
+  process.exit(1);
+});
 
-export interface TransactionFilters {
-  status?: string;
-  gateway?: string;
-  startDate?: string;
-  endDate?: string;
-  search?: string;
-  page?: string;
-  limit?: string;
-}
-
-export interface AnalyticsDateRange {
-  startDate?: string;
-  endDate?: string;
-  period?: "day" | "week" | "month" | "year";
-}
-
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  meta?: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+try {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`JWT_SECRET set: ${!!process.env.JWT_SECRET}`);
+    console.log(`DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
+  });
+} catch (err) {
+  console.error("FAILED TO START SERVER:", err);
+  process.exit(1);
 }
