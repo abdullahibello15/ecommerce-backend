@@ -45,6 +45,35 @@ Server runs at: **http://localhost:5000**
 
 ---
 
+## External Deployment
+
+Use these commands on hosts like Render, Railway, Fly, or Heroku:
+
+```bash
+# Build command
+npm install && npm run build
+
+# Start command, if the database is already migrated
+npm start
+
+# Start command, if the host should run migrations before booting
+npm run start:migrate
+```
+
+Required production environment variables:
+
+```bash
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+JWT_REFRESH_SECRET=...
+NODE_ENV=production
+FRONTEND_URL=https://your-frontend.example.com
+```
+
+`FRONTEND_URL` may contain multiple comma-separated origins.
+
+---
+
 ## API Endpoints
 
 All authenticated routes require:

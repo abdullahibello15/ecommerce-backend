@@ -22,10 +22,16 @@ import { notFound } from './middleware/notFound';
 
 const app = express();
 
+// External hosts such as Render, Railway, Fly, and Heroku usually put Express
+// behind a reverse proxy. This keeps rate-limit client IP detection accurate.
+app.set('trust proxy', 1);
+
 // ─── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map((origin) => origin.trim())
+    : 'http://localhost:5173',
   credentials: true,
 }));
 
