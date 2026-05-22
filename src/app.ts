@@ -28,14 +28,7 @@ app.set("trust proxy", 1);
 
 // ─── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL
-      ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
-      : "http://localhost:5173",
-    credentials: true,
-  }),
-);
+app.use(cors());
 
 // ─── Rate limiting ─────────────────────────────────────────────────────────────
 const limiter = rateLimit({
