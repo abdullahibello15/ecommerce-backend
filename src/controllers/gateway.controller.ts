@@ -244,7 +244,10 @@ export const testGateway = async (
       return;
     }
 
-    if (!gateway.secretKey) {
+    // ── FIX: fall back to env var if the DB record has no secret key ──
+    const secretKey = gateway.secretKey || process.env.PAYSTACK_SECRET_KEY;
+
+    if (!secretKey) {
       sendError(res, "Gateway has no secret key configured", 400);
       return;
     }
@@ -260,7 +263,7 @@ export const testGateway = async (
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${gateway.secretKey}`,
+            Authorization: `Bearer ${secretKey}`,
             "Content-Type": "application/json",
           },
           signal: AbortSignal.timeout(10_000),
