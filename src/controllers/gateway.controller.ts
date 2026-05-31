@@ -106,7 +106,6 @@ export const getGateways = async (
         config: true,
         createdAt: true,
         updatedAt: true,
-        // Never return secret keys in list
       },
     });
     sendSuccess(res, gateways);
@@ -133,7 +132,6 @@ export const getGateway = async (
         webhookUrl: true,
         config: true,
         createdAt: true,
-        // secretKey omitted even here — only return masked version
       },
     });
     if (!gateway) {
@@ -183,7 +181,6 @@ export const updateGateway = async (
       },
     });
 
-    // Log the update
     await prisma.gatewayLog.create({
       data: {
         gatewayId: id,
@@ -227,6 +224,85 @@ export const getGatewayLogs = async (
       data: logs,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── POST /api/gateways/:id/test ─────────────────────────────────────────────
+export const testGateway = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const gateway = await prisma.gateway.findUnique({ where: { id } });
+    if (!gateway) {
+      sendError(res, "Gateway not found", 404);
+      return;
+    }
+
+    if (!gateway.secretKey) {
+      sendError(res, "Gateway has no secret key configured", 400);
+      return;
+    }
+
+    // Test connectivity by hitting the gateway's verification endpoint
+    const startTime = Date.now();
+    let success = false;
+    let message = "";
+
+    try {
+      const response = await fetch(
+        "https://api.paystack.co/transaction/verify/test",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${gateway.secretKey}`,
+            "Content-Type": "application/json",
+          },
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
+
+      // A 401 means the key is wrong, anything else means we reached Paystack
+      success = response.status !== 401;
+      message = success
+        ? "Gateway credentials are valid"
+        : "Invalid secret key — authorization failed";
+    } catch (err: any) {
+      message = `Connection failed: ${err.message}`;
+    }
+
+    const duration = Date.now() - startTime;
+
+    // Log the test attempt
+    await prisma.gatewayLog.create({
+      data: {
+        gatewayId: id,
+        event: "gateway.tested",
+        payload: {
+          testedBy: req.user?.userId,
+          success,
+          message,
+          duration,
+        },
+      },
+    });
+
+    if (!success) {
+      sendError(res, message, 400);
+      return;
+    }
+
+    sendSuccess(
+      res,
+      { success, message, duration },
+      200,
+      "Gateway test complete",
+    );
   } catch (err) {
     next(err);
   }

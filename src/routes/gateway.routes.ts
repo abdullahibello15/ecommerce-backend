@@ -5,6 +5,7 @@ import {
   getGateway,
   updateGateway,
   getGatewayLogs,
+  testGateway,
 } from "../controllers/gateway.controller";
 import { authenticate, requireRole } from "../middleware/auth";
 
@@ -17,5 +18,6 @@ router.get("/", getGateways);
 router.get("/:id", getGateway);
 router.put("/:id", requireRole("OWNER", "ADMIN"), updateGateway);
 router.get("/:id/logs", getGatewayLogs);
+router.post("/:id/test", requireRole("OWNER", "ADMIN"), testGateway);
 
 export default router;
